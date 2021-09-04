@@ -1,0 +1,48 @@
+﻿<Window x:Class="Real_ESRGAN_GUI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Real_ESRGAN_GUI"
+        mc:Ignorable="d"
+        Title="Real-ESRGAN_GUI" Height="450" Width="800" MinWidth="600" MinHeight="340">
+    <Grid Margin="0,0,0,-5">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <GroupBox Header="Input &amp; Output Path" Height="148" Margin="10,10,10,0" VerticalAlignment="Top" Grid.ColumnSpan="2">
+            <Grid Height="127">
+                <Grid.RowDefinitions>
+                    <RowDefinition/>
+                    <RowDefinition Height="Auto" MinHeight="54"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <Label Content="Input" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Height="25" Width="40"/>
+                <Label Content="Output" HorizontalAlignment="Left" Margin="10,40,0,0" VerticalAlignment="Top" Height="25" Width="51"/>
+                <TextBox x:Name="OutputPathTextBox" Margin="80,40,70,0" TextWrapping="NoWrap" VerticalAlignment="Top" Height="25"/>
+                <TextBox x:Name="InputPathTextBox" Margin="80,10,69,0" TextWrapping="NoWrap" VerticalAlignment="Top" Height="25"/>
+                <Button x:Name="OutputPathBrowseButton" Content="Browse..." Margin="0,40,10,0" VerticalAlignment="Top" Height="25" HorizontalAlignment="Right" Width="55" Click="OutputPathBrowseButton_Click"/>
+                <Button x:Name="InputPathBrowseButton" Content="Browse..." Margin="0,10,10,0" Height="25" VerticalAlignment="Top" HorizontalAlignment="Right" Width="54" Click="InputPathBrowseButton_Click"/>
+                <GroupBox Header="Input Format" HorizontalAlignment="Left" Width="239" Grid.Row="1">
+                    <TextBox x:Name="InputFormatTextBox" TextWrapping="Wrap" Margin="0,0,-2,0" Text="png:jpg:jpeg:tif:tiff:bmp:tga" Height="25"/>
+                </GroupBox>
+                <GroupBox Header="Output Format" Margin="244,0,0,0" HorizontalAlignment="Left" Width="140" Grid.Row="1">
+                    <ComboBox x:Name="OutputFormatComboBox" Height="25" Margin="0,0,-2,0" IsEditable="True"/>
+                </GroupBox>
+                <GroupBox Header="Model Selection" Margin="389,0,5,0" Grid.Row="1">
+                    <ComboBox x:Name="ModelSelectionComboBox" Height="25" Margin="0,0,-2,0"/>
+                </GroupBox>
+            </Grid>
+        </GroupBox>
+        <ProgressBar Height="25" Margin="10,192,10,0" VerticalAlignment="Top" Grid.ColumnSpan="2"/>
+        <Border BorderThickness="1" BorderBrush="Black" Margin="10,222,10,10" Grid.ColumnSpan="2">
+            <TextBlock Margin="0,0,0,-1" TextWrapping="Wrap"/>
+        </Border>
+        <Button x:Name="CancelButton" Content="Cancel" Grid.Column="1" Margin="0,163,70,0" VerticalAlignment="Top" Height="25" RenderTransformOrigin="0.116,0.79" HorizontalAlignment="Right" Width="55"/>
+        <Button x:Name="StartButton" Content="Start" Grid.Column="1" Margin="0,163,10,0" VerticalAlignment="Top" Height="25" Click="StartButton_Click" HorizontalAlignment="Right" Width="55"/>
+
+    </Grid>
+</Window>
