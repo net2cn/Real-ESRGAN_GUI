@@ -6,6 +6,9 @@
         xmlns:local="clr-namespace:Real_ESRGAN_GUI"
         mc:Ignorable="d"
         Title="Real-ESRGAN_GUI" Height="450" Width="800" MinWidth="600" MinHeight="340">
+    <Window.Resources>
+        <local:ListToStringConverter x:Key="ListToStringConverter"/>
+    </Window.Resources>
     <Grid Margin="0,0,0,-5">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
@@ -39,10 +42,17 @@
         </GroupBox>
         <ProgressBar Height="25" Margin="10,192,10,0" VerticalAlignment="Top" Grid.ColumnSpan="2"/>
         <Border BorderThickness="1" BorderBrush="Black" Margin="10,222,10,10" Grid.ColumnSpan="2">
-            <TextBlock Margin="0,0,0,-1" TextWrapping="Wrap"/>
+            <TextBlock x:Name="LogTextBlock" Margin="0,0,0,-1" TextWrapping="Wrap">
+                <TextBlock.Text>
+                    <MultiBinding Converter="{StaticResource ListToStringConverter}">
+                        <Binding Path="Logger.Buffer" Mode="OneWay"/>
+                        <Binding Path="Logger.Buffer.Count" Mode="OneWay" />
+                    </MultiBinding>
+                </TextBlock.Text>
+            </TextBlock>
         </Border>
         <Button x:Name="CancelButton" Content="Cancel" Grid.Column="1" Margin="0,163,70,0" VerticalAlignment="Top" Height="25" RenderTransformOrigin="0.116,0.79" HorizontalAlignment="Right" Width="55"/>
-        <Button x:Name="StartButton" Content="Start" Grid.Column="1" Margin="0,163,10,0" VerticalAlignment="Top" Height="25" Click="StartButton_Click" HorizontalAlignment="Right" Width="55"/>
+        <Button x:Name="StartButton" Content="Start" Grid.Column="1" Margin="0,163,10,0" VerticalAlignment="Top" Height="25" Click="StartButton_ClickAsync" HorizontalAlignment="Right" Width="55"/>
 
     </Grid>
 </Window>

@@ -8,10 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="models\" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <PackageReference Include="NcnnDotNet" Version="0.0.0.20210723" />
+    <PackageReference Include="NcnnDotNet.GPU" Version="0.0.0.20210723" />
     <PackageReference Include="Ookii.Dialogs.Wpf" Version="3.1.0" />
   </ItemGroup>
 
