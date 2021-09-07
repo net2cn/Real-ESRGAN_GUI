@@ -18,6 +18,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.ML" Version="1.6.0" />
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.8.1" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu" Version="1.8.1" />
     <PackageReference Include="Ookii.Dialogs.Wpf" Version="3.1.0" />
     <PackageReference Include="System.Numerics.Tensors" Version="0.1.0" />
   </ItemGroup>
