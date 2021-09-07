@@ -40,7 +40,7 @@
                 </GroupBox>
             </Grid>
         </GroupBox>
-        <ProgressBar Height="25" Margin="10,192,10,0" VerticalAlignment="Top" Grid.ColumnSpan="2"/>
+        <ProgressBar local:ProgressBarSmoother.SmoothValue="{Binding Logger.Progress}" x:Name="ProgressBar" Height="25" Margin="10,192,10,0" VerticalAlignment="Top" Grid.ColumnSpan="2"/>
         <Border BorderThickness="1" BorderBrush="Black" Margin="10,222,10,10" Grid.ColumnSpan="2">
             <TextBlock x:Name="LogTextBlock" Margin="0,0,0,-1" TextWrapping="Wrap">
                 <TextBlock.Text>
@@ -51,7 +51,7 @@
                 </TextBlock.Text>
             </TextBlock>
         </Border>
-        <Button x:Name="CancelButton" Content="Cancel" Grid.Column="1" Margin="0,163,70,0" VerticalAlignment="Top" Height="25" RenderTransformOrigin="0.116,0.79" HorizontalAlignment="Right" Width="55"/>
+        <Button x:Name="CancelButton" Content="Cancel" Grid.Column="1" Margin="0,163,70,0" VerticalAlignment="Top" Height="25" RenderTransformOrigin="0.116,0.79" HorizontalAlignment="Right" Width="55" Click="CancelButton_Click"/>
         <Button x:Name="StartButton" Content="Start" Grid.Column="1" Margin="0,163,10,0" VerticalAlignment="Top" Height="25" Click="StartButton_ClickAsync" HorizontalAlignment="Right" Width="55"/>
 
     </Grid>

@@ -1,18 +1,38 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Data;
+using System.Windows.Media.Animation;
 
 namespace Real_ESRGAN_GUI
 {
-    public class Logger
+    public class Logger : INotifyPropertyChanged
     {
         public ObservableCollection<string> Buffer { get; set; }
+        public int Progress {
+            get => _progress; 
+            set {
+                this._progress = value;
+                NotifyPropertyChanged(nameof(Progress));
+            } 
+        }
+
         private int maxLimit = 500;
+        private int _progress = 0;
+
+        private static TimeSpan duration = TimeSpan.FromSeconds(2);
+        private static readonly Lazy<Logger> lazy = new Lazy<Logger>(() => new Logger());
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        internal void NotifyPropertyChanged(String propertyName) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+        public static Logger Instance { get { return lazy.Value; } }
 
         public Logger()
         {

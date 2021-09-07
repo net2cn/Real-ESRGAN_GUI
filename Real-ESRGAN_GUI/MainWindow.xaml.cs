@@ -1,9 +1,11 @@
 ﻿using System;
+using System.ComponentModel;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Media.Animation;
 using Ookii.Dialogs.Wpf;
 
 namespace Real_ESRGAN_GUI
@@ -15,13 +17,12 @@ namespace Real_ESRGAN_GUI
     {
         private string modelPath="./models";
         private string[] supportedOutputFormats = { "png", "jpg", "gif" };
-        public Logger Logger { get; set; }
+        public Logger Logger { get; set; } = Logger.Instance;
 
         public MainWindow()
         {
             InitializeComponent();
 
-            Logger = new Logger();
             DataContext = this;
 
             // Add supported output format.
@@ -32,7 +33,7 @@ namespace Real_ESRGAN_GUI
             OutputFormatComboBox.SelectedIndex = 0;
 
             // Search models.
-            string[] models = Utils.SearchDirectory(modelPath, "*.param");
+            string[] models = Utils.SearchDirectory(modelPath, "*.onnx");
             foreach (var model in models)
             {
                 ModelSelectionComboBox.Items.Add(model.Split(".")[0]);
@@ -42,10 +43,11 @@ namespace Real_ESRGAN_GUI
 
         private async void StartButton_ClickAsync(object sender, RoutedEventArgs e)
         {
+            Logger.Progress = 0;
             string inputPath = InputPathTextBox.Text;
             string outputPath = OutputPathTextBox.Text;
 
-            string selectedModelPath = $"{modelPath}/{ModelSelectionComboBox.SelectedItem}.bin";
+            string selectedModelPath = $"{modelPath}/{ModelSelectionComboBox.SelectedItem}.onnx";
 
             // Pre-check if parameters are all set.
             if(!File.Exists(inputPath) && !Directory.Exists(inputPath))
@@ -78,12 +80,24 @@ namespace Real_ESRGAN_GUI
 
             // Create output path. No need to check if path exists.
             Directory.CreateDirectory(outputPath);
+            Logger.Progress = 10;
 
+            StartButton.IsEnabled = false;
+
+            Logger.Log($"Loading model {selectedModelPath}...");
             Model model = new Model();
-            Logger.Log($"Loading model {selectedModelPath}.");
-            model.LoadModel(modelPath, ModelSelectionComboBox.SelectedItem.ToString());
+            await model.LoadModel(modelPath, ModelSelectionComboBox.SelectedItem.ToString());
+            Logger.Progress = 30;
             await model.Scale(inputPath, outputPath, OutputFormatComboBox.SelectedItem.ToString(), 1);
+            Logger.Progress = 100;
+            Logger.Log("Done!");
             model.Dispose();
+            StartButton.IsEnabled = true;
+        }
+
+        private void CancelButton_Click(object sender, RoutedEventArgs e)
+        {
+            Logger.Progress += 10;
         }
 
         private void InputPathBrowseButton_Click(object sender, RoutedEventArgs e)
@@ -113,6 +127,28 @@ namespace Real_ESRGAN_GUI
             {
                 OutputPathTextBox.Text = dialog.SelectedPath;
             }
+        }
+    }
+
+    public class ProgressBarSmoother
+    {
+        public static readonly DependencyProperty SmoothValueProperty =
+               DependencyProperty.RegisterAttached("SmoothValue", typeof(double), typeof(ProgressBarSmoother), new PropertyMetadata(0.0, changing));
+
+        public static double GetSmoothValue(DependencyObject obj)
+        {
+            return (double)obj.GetValue(SmoothValueProperty);
+        }
+
+        public static void SetSmoothValue(DependencyObject obj, double value)
+        {
+            obj.SetValue(SmoothValueProperty, value);
+        }
+
+        private static void changing(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var anim = new DoubleAnimation((double)e.OldValue, (double)e.NewValue, new TimeSpan(0, 0, 0, 0, 250));
+            (d as ProgressBar).BeginAnimation(ProgressBar.ValueProperty, anim, HandoffBehavior.Compose);
         }
     }
 }

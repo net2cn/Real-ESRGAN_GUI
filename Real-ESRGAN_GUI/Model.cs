@@ -1,109 +1,117 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Runtime.InteropServices;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
-using NcnnDotNet;
-using NcnnDotNet.OpenCV;
+using Microsoft.ML;
+using Microsoft.ML.OnnxRuntime;
+using Microsoft.ML.OnnxRuntime.Tensors;
 
 namespace Real_ESRGAN_GUI
 {
-    public sealed class Model:IDisposable
+    public class Model : IDisposable
     {
-        public int NumThread = Environment.ProcessorCount;
-        private Net model = new Net();
-        private int prepadding = 0;
-        private int tileSize = 100;
+        private string modelPath = "";
+        private InferenceSession session;
+        private Logger logger = Logger.Instance;
 
-        public void LoadModel(string modelPath, string modelName)
+        public async Task LoadModel(string modelPath, string modelName)
         {
-            string paramExtension = ".param";
-            string binExtension = ".bin";
-
-            try
+            if (session == null || this.modelPath != modelPath)
             {
-                model.LoadParam($"{modelPath}/{modelName}{paramExtension}");
-                model.LoadModel($"{modelPath}/{modelName}{binExtension}");
-            }
-            catch
-            {
-                throw;
+                session = await Task.Run(() => { return new InferenceSession(Path.Combine(modelPath, $"{modelName}.onnx")); });
             }
         }
 
-        public async Task Scale(string imagePath, string imageSavePath, string imageSaveFormat, int scale)
+        public async Task Scale(string inputPath, string outputPath, string outputFormat, int scale)
         {
-            if (!File.Exists(imagePath))
-            {
-                throw new FileNotFoundException(imagePath);
-            }
+            Bitmap image = new Bitmap(inputPath);
 
-            var file = await File.ReadAllBytesAsync(imagePath);
-            using var image = Cv2.ImDecode(file, CvLoadImage.Color);
+            logger.Log("Creating input image...");
+            var inMat = ConvertImageToFloatTensorUnsafe(image);
+            logger.Progress += 10;
 
-            if (image.IsEmpty)
-            {
-                throw new NotSupportedException($"{imagePath} is not a supported format.");
-            }
+            logger.Log("Inferencing...");
+            var outMat = await Inference(inMat);
+            logger.Progress += 10;
 
-            var inImage = new NcnnDotNet.Mat(image.Cols, image.Rows, image.Channels(), image.Data);
-            var outMat = Inference(inImage, scale);
-            var mat = new NcnnDotNet.Mat();
-            mat.CreateLike(outMat);
-            if (image.Channels() == 3)
-            {
-                outMat.ToPixels(mat.Data, PixelType.Rgb2Bgr);
-            }
-            if (image.Channels() == 4)
-            {
-                outMat.ToPixels(mat.Data, PixelType.Rgba2Bgra);
-            }
+            logger.Log("Converting output tensor to image...");
+            image = ConvertFloatTensorToImageUnsafe(outMat);
 
-            var saveName = Path.GetFileName(imagePath);
-
-            //using (StreamWriter sw = new StreamWriter($"{imageSavePath}{saveName.Split(".")[0]}_{scale}x.ppm"))
-            //{
-            //    sw.Write("P3\r\n{0} {1}\r\n{2}\r\n", outMat.W, outMat.H, 255);
-            //    for (int i = 0; i < data.Length; i+=4)
-            //        sw.Write("{0} {1} {2}\r\n", data[i], data[i+1], data[i+2]);
-            //    sw.Close();
-            //}
-            //if (outMat.C == 3)
-            //{
-            //    NcnnDotNet.C.Ncnn.MatToPixels(outMat, data, PixelType.Rgb2Bgr, outMat.W * 3);
-            //}
-            //if (outMat.C == 4)
-            //{
-            //    NcnnDotNet.C.Ncnn.MatToPixels(outMat, data, PixelType.Rgba2Bgra, outMat.W * 4);
-            //}
-
-            NcnnDotNet.OpenCV.Mat outImg = new NcnnDotNet.OpenCV.Mat(mat.H, mat.W, image.Channels()==3?Cv2.CV_8UC3:Cv2.CV_8UC4, mat.Data);
-            Cv2.ImShow("outImg", outImg);
-            Cv2.ImWrite($"{imageSavePath}{saveName.Split(".")[0]}_{scale}x.{imageSaveFormat}", outImg);
+            var saveName = Path.GetFileName(inputPath);
+            logger.Log($"Writing image to {outputPath}{saveName.Split(".")[0]}_{scale}x.{outputFormat} ...");
+            image.Save($"{outputPath}{saveName.Split(".")[0]}_{scale}x.{outputFormat}");
+            logger.Progress += 10;
         }
 
-        private NcnnDotNet.Mat Inference(NcnnDotNet.Mat image, int scale)
+        public async Task<Tensor<float>> Inference(Tensor<float> input)
         {
-            var outMat = new NcnnDotNet.Mat();
+            var inputName = session.InputMetadata.First().Key;
+            var inputTensor = new List<NamedOnnxValue>() { NamedOnnxValue.CreateFromTensor<float>(inputName, input) };
+            var output = await Task.Run(()=> { return session.Run(inputTensor).First().Value; });
+            return (Tensor<float>)output;
+        }
 
-            using (var inMat = image.C == 3 ? NcnnDotNet.Mat.FromPixels(image.Data, PixelType.Bgr2Rgb, image.W, image.H) : NcnnDotNet.Mat.FromPixels(image.Data, PixelType.Bgra2Rgba, image.W, image.H))
+        public Tensor<float> ConvertImageToFloatTensorUnsafe(Bitmap image)
+        {
+            // Create the Tensor with the appropiate dimensions for the NN
+            Tensor<float> data = new DenseTensor<float>(new[] { 1, 3, image.Height, image.Width });
+
+            BitmapData bmd = image.LockBits(new Rectangle(0, 0, image.Width, image.Height), System.Drawing.Imaging.ImageLockMode.ReadOnly, image.PixelFormat);
+            int PixelSize = 3;
+
+            unsafe
             {
-                using (var ex = model.CreateExtractor())
+                for (int y = 0; y < bmd.Height; y++)
                 {
-                    ex.SetNumThreads(NumThread);
-                    ex.Input("data", inMat);
-
-                    ex.Extract("output", outMat);
+                    // row is a pointer to a full row of data with each of its colors
+                    byte* row = (byte*)bmd.Scan0 + (y * bmd.Stride);
+                    for (int x = 0; x < bmd.Width; x++)
+                    {
+                        // note the order of colors is BGR, convert to RGB
+                        data[0, 0, x, y] = row[x * PixelSize + 2] / (float)255.0;
+                        data[0, 1, x, y] = row[x * PixelSize + 1] / (float)255.0;
+                        data[0, 2, x, y] = row[x * PixelSize + 0] / (float)255.0;
+                    }
                 }
-            }
 
-            return outMat;
+                image.UnlockBits(bmd);
+            }
+            return data;
+        }
+
+        public Bitmap ConvertFloatTensorToImageUnsafe(Tensor<float> tensor)
+        {
+            Bitmap bmp = new Bitmap(tensor.Dimensions[2], tensor.Dimensions[3], PixelFormat.Format24bppRgb);
+            BitmapData bmd = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), System.Drawing.Imaging.ImageLockMode.ReadOnly, bmp.PixelFormat);
+            int PixelSize = 3;
+            unsafe
+            {
+                for (int y = 0; y < bmd.Height; y++)
+                {
+                    // row is a pointer to a full row of data with each of its colors
+                    byte* row = (byte*)bmd.Scan0 + (y * bmd.Stride);
+                    for (int x = 0; x < bmd.Width; x++)
+                    {
+                        // note the order of colors is RGB, convert to BGR
+                        // remember clamp to [0, 1]
+                        row[x * PixelSize + 2] = (byte)(Math.Clamp(tensor[0, 0, x, y], 0, 1) * 255.0);
+                        row[x * PixelSize + 1] = (byte)(Math.Clamp(tensor[0, 1, x, y], 0, 1) * 255.0);
+                        row[x * PixelSize + 0] = (byte)(Math.Clamp(tensor[0, 2, x, y], 0, 1) * 255.0);
+                    }
+                }
+
+                bmp.UnlockBits(bmd);
+            }
+            return bmp;
         }
 
         public void Dispose()
         {
-            model?.Dispose();
+            session.Dispose();
         }
     }
 }
