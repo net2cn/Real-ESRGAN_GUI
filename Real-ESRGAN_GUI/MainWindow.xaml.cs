@@ -2,6 +2,8 @@
 using System.ComponentModel;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -17,6 +19,7 @@ namespace Real_ESRGAN_GUI
     {
         private string modelPath="./models";
         private string[] supportedOutputFormats = { "png", "jpg", "gif" };
+        private CancellationTokenSource cancellationTokenSource;
         public Logger Logger { get; set; } = Logger.Instance;
 
         public MainWindow()
@@ -82,22 +85,47 @@ namespace Real_ESRGAN_GUI
             Directory.CreateDirectory(outputPath);
             Logger.Progress = 10;
 
+            // Update UI element and prepare cancellation token source.
             StartButton.IsEnabled = false;
+            if (cancellationTokenSource != null)
+            {
+                cancellationTokenSource.Dispose();
+            }
+            cancellationTokenSource = new CancellationTokenSource();
 
-            Logger.Log($"Loading model {selectedModelPath}...");
             Model model = new Model();
-            await model.LoadModel(modelPath, ModelSelectionComboBox.SelectedItem.ToString());
-            Logger.Progress = 30;
-            await model.Scale(inputPath, outputPath, OutputFormatComboBox.SelectedItem.ToString(), 1);
-            Logger.Progress = 100;
-            Logger.Log("Done!");
+            try
+            {
+                Logger.Log($"Loading model {selectedModelPath}...");
+                
+                await model.LoadModel(modelPath, ModelSelectionComboBox.SelectedItem.ToString(), cancellationTokenSource.Token).WaitOrCancel(cancellationTokenSource.Token);
+                Logger.Progress = 30;
+
+                CancelButton.IsEnabled = false;
+                await model.Scale(inputPath, outputPath, OutputFormatComboBox.SelectedItem.ToString());
+                Logger.Progress = 100;
+                Logger.Log("Done!");
+            }
+            catch (OperationCanceledException)
+            {
+                Logger.Log("Operation was cancelled by user.");
+            }
+
             model.Dispose();
             StartButton.IsEnabled = true;
+            CancelButton.IsEnabled = true;
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
-            Logger.Progress += 10;
+            if (cancellationTokenSource != null)
+            {
+                cancellationTokenSource.Cancel();
+            }
+            else
+            {
+                Logger.Log("Nothing to cancel.");
+            }
         }
 
         private void InputPathBrowseButton_Click(object sender, RoutedEventArgs e)
@@ -125,7 +153,7 @@ namespace Real_ESRGAN_GUI
             dialog.UseDescriptionForTitle = true; // This applies to the Vista style dialog only, not the old dialog.
             if ((bool)dialog.ShowDialog(this))
             {
-                OutputPathTextBox.Text = dialog.SelectedPath;
+                OutputPathTextBox.Text = Path.Combine(dialog.SelectedPath, " ").TrimEnd();
             }
         }
     }

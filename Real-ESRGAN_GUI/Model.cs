@@ -4,7 +4,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
@@ -17,16 +17,16 @@ namespace Real_ESRGAN_GUI
         private InferenceSession session;
         private Logger logger = Logger.Instance;
 
-        public async Task LoadModel(string modelPath, string modelName)
+        public async Task LoadModel(string modelPath, string modelName, CancellationToken token)
         {
             if (session == null || this.modelName != modelName)
             {
                 this.modelName = modelName;
-                session = await Task.Run(() => { return new InferenceSession(Path.Combine(modelPath, $"{modelName}.onnx")); });
+                session = await Task.Run(() => { return new InferenceSession(Path.Combine(modelPath, $"{modelName}.onnx")); }).WaitOrCancel(token);
             }
         }
 
-        public async Task Scale(string inputPath, string outputPath, string outputFormat, int scale)
+        public async Task Scale(string inputPath, string outputPath, string outputFormat)
         {
             Bitmap image = new Bitmap(inputPath);
             if (IsAlphaBitmap(image))
@@ -46,6 +46,7 @@ namespace Real_ESRGAN_GUI
 
             logger.Log("Converting output tensor to image...");
             image = ConvertFloatTensorToImageUnsafe(outMat);
+            
 
             var saveName = Path.GetFileName(inputPath);
             var savePath = $"{outputPath}{saveName.Split(".")[0]}_{modelName}.{outputFormat}";
@@ -149,7 +150,10 @@ namespace Real_ESRGAN_GUI
 
         public void Dispose()
         {
-            session.Dispose();
+            if (session!=null)
+            {
+                session.Dispose();
+            }
         }
     }
 }

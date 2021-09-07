@@ -1,13 +1,21 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0-windows</TargetFramework>
     <RootNamespace>Real_ESRGAN_GUI</RootNamespace>
     <UseWPF>true</UseWPF>
+    <Platforms>AnyCPU;x64</Platforms>
+    <ApplicationIcon />
+    <StartupObject />
+    <SignAssembly>false</SignAssembly>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
@@ -15,16 +23,23 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
   <ItemGroup>
-    <PackageReference Include="Microsoft.ML" Version="1.6.0" />
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.8.1" />
-    <PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu" Version="1.8.1" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.Managed" Version="1.8.1" />
     <PackageReference Include="Ookii.Dialogs.Wpf" Version="3.1.0" />
-    <PackageReference Include="System.Numerics.Tensors" Version="0.1.0" />
   </ItemGroup>
 
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="XCOPY &quot;$(SolutionDir)\Real-ESRGAN_GUI\models&quot; &quot;$(TargetDir)\models\&quot; /s /i /y" />
-  </Target>
+  <ItemGroup>
+    <None Update="models\realesrgan-x4plus.onnx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="models\realesrgan-x4plus_anime_6B.onnx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 
 </Project>
