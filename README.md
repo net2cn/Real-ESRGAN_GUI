@@ -19,6 +19,7 @@ From ![256px image](./assets/avatar_256px.png) to ![1024px image](./assets/avata
 - GPU support is not working.
 - Directory input is not implemented yet.
 - Alpha channel will be ignored.
+- Huge memory consumption when handling large image (~1000x1000, eats up ~18.5G memory easily).
 
 ## Acknowledgements
 This repository contains ONNX models converted from [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) repo. All copyrights and trademarks of the materials used belong to their respective owners and are not being sold.
