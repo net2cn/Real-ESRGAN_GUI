@@ -112,6 +112,7 @@ namespace Real_ESRGAN_GUI
             }
 
             model.Dispose();
+            GC.Collect();
             StartButton.IsEnabled = true;
             CancelButton.IsEnabled = true;
         }

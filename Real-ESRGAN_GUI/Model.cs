@@ -47,12 +47,12 @@ namespace Real_ESRGAN_GUI
             logger.Log("Converting output tensor to image...");
             image = ConvertFloatTensorToImageUnsafe(outMat);
             
-
             var saveName = Path.GetFileName(inputPath);
             var savePath = $"{outputPath}{saveName.Split(".")[0]}_{modelName}.{outputFormat}";
             logger.Log($"Writing image to {savePath}...");
             image.Save(savePath);
             logger.Progress += 10;
+            image.Dispose();
         }
 
         public async Task<Tensor<float>> Inference(Tensor<float> input)
@@ -141,10 +141,12 @@ namespace Real_ESRGAN_GUI
         {
             Bitmap target = new Bitmap(bitmap.Width, bitmap.Height, PixelFormat.Format24bppRgb);
             target.SetResolution(bitmap.HorizontalResolution, bitmap.VerticalResolution);   // Set both bitmap to same dpi to prevent scaling.
-            Graphics g = Graphics.FromImage(target);
-            g.Clear(Color.White);
-            g.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceOver;
-            g.DrawImage(bitmap, 0, 0);
+            using (Graphics g = Graphics.FromImage(target))
+            {
+                g.Clear(Color.White);
+                g.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceOver;
+                g.DrawImage(bitmap, 0, 0);
+            }
             return target;
         }
 

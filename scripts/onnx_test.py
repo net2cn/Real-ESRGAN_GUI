@@ -35,14 +35,14 @@ project_path=os.path.abspath("../Real-ESRGAN_GUI/")
 sess = rt.InferenceSession(os.path.join(project_path, "models/realesrgan-x4plus_anime_6B.onnx"))
 print("loaded model.")
 
-in_image = cv2.imread(os.path.join(project_path, "input.jpg"), cv2.IMREAD_UNCHANGED)
+in_image = cv2.imread(os.path.join("../assets", "avatar_256px.png"), cv2.IMREAD_UNCHANGED)
 print("loaded input image.")
 
-print("create in_mat from tiles.")
 in_mat = cv2.cvtColor(in_image, cv2.COLOR_BGR2RGB)
 in_mat = np.transpose(in_mat, (2, 1, 0))[np.newaxis]
 in_mat = in_mat.astype(np.float32)
 in_mat = in_mat/255
+print("loaded image.")
 
 # display_image(in_mat, cv2.COLOR_RGB2BGR)
 print("sess run.")
@@ -53,8 +53,8 @@ out_mat = sess.run([output_name], {input_name: in_mat})[0]
 print("convert out_mat to image")
 out_mat = np.squeeze(out_mat, axis=0)
 out_mat = np.clip(out_mat, 0, 1)
-out_mat = out_mat.T
 out_mat = (out_mat*255.).round().astype(np.uint8)
+out_mat = out_mat.T
 out_mat = cv2.cvtColor(out_mat, cv2.COLOR_RGB2BGR)
 cv2.imshow("out_mat", out_mat)
 cv2.waitKey()
