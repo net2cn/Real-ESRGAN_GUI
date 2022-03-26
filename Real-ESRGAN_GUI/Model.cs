@@ -90,7 +90,7 @@ namespace Real_ESRGAN_GUI
         public static Tensor<float> ConvertImageToFloatTensorUnsafe(Bitmap image)
         {
             // Create the Tensor with the appropiate dimensions for the NN
-            Tensor<float> data = new DenseTensor<float>(new[] { 1, 3, image.Height, image.Width });
+            Tensor<float> data = new DenseTensor<float>(new[] { 1, 3, image.Width, image.Height });
 
             BitmapData bmd = image.LockBits(new Rectangle(0, 0, image.Width, image.Height), ImageLockMode.ReadOnly, image.PixelFormat);
             int PixelSize = 3;

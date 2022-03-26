@@ -118,6 +118,10 @@ namespace Real_ESRGAN_GUI
             {
                 Logger.Log("Operation was cancelled by user.");
             }
+            catch
+            {
+                throw;
+            }
             finally
             {
                 model.Dispose();
