@@ -9,6 +9,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media.Animation;
 using Ookii.Dialogs.Wpf;
+using Microsoft.ML.OnnxRuntime;
 
 namespace Real_ESRGAN_GUI
 {
@@ -53,6 +54,7 @@ namespace Real_ESRGAN_GUI
             string selectedModelPath = $"{modelPath}/{ModelSelectionComboBox.SelectedItem}.onnx";
 
             // Pre-check if parameters are all set.
+            // Todo: Walk through directory recursively to find matching files if input path is a directory.
             if(!File.Exists(inputPath) && !Directory.Exists(inputPath))
             {
                 MessageBox.Show("Input path not exists!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -98,23 +100,31 @@ namespace Real_ESRGAN_GUI
             {
                 Logger.Log($"Loading model {selectedModelPath}...");
                 
-                await model.LoadModel(modelPath, ModelSelectionComboBox.SelectedItem.ToString(), cancellationTokenSource.Token).WaitOrCancel(cancellationTokenSource.Token);
                 Logger.Progress = 30;
 
-                CancelButton.IsEnabled = false;
-                await model.Scale(inputPath, outputPath, OutputFormatComboBox.SelectedItem.ToString());
-                Logger.Progress = 100;
-                Logger.Log("Done!");
+                if (await model.LoadModel(modelPath, ModelSelectionComboBox.SelectedItem.ToString(), cancellationTokenSource.Token).WaitOrCancel(cancellationTokenSource.Token))
+                {
+                    CancelButton.IsEnabled = false;
+                    await model.Scale(inputPath, outputPath, OutputFormatComboBox.SelectedItem.ToString());
+                    Logger.Progress = 100;
+                    Logger.Log("Done!");
+                }
+                else
+                {
+                    Logger.Log("Failed to load model!");
+                }
             }
             catch (OperationCanceledException)
             {
                 Logger.Log("Operation was cancelled by user.");
             }
-
-            model.Dispose();
-            GC.Collect();
-            StartButton.IsEnabled = true;
-            CancelButton.IsEnabled = true;
+            finally
+            {
+                model.Dispose();
+                GC.Collect();
+                StartButton.IsEnabled = true;
+                CancelButton.IsEnabled = true;
+            }
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)

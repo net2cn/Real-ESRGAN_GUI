@@ -17,13 +17,27 @@ namespace Real_ESRGAN_GUI
         private InferenceSession session;
         private Logger logger = Logger.Instance;
 
-        public async Task LoadModel(string modelPath, string modelName, CancellationToken token)
+        public async Task<bool> LoadModel(string modelPath, string modelName, CancellationToken token)
         {
             if (session == null || this.modelName != modelName)
             {
                 this.modelName = modelName;
-                session = await Task.Run(() => { return new InferenceSession(Path.Combine(modelPath, $"{modelName}.onnx")); }).WaitOrCancel(token);
+                try
+                {
+                    session = await Task.Run(() => { return new InferenceSession(Path.Combine(modelPath, $"{modelName}.onnx"), SessionOptions.MakeSessionOptionWithCudaProvider()); }).WaitOrCancel(token);
+                }
+                catch
+                {
+                    logger.Log("Unable to initial inference session on CUDA device! Using CPU instead.");
+                    session = await Task.Run(() => { return new InferenceSession(Path.Combine(modelPath, $"{modelName}.onnx")); }).WaitOrCancel(token);
+                }
             }
+
+            if (session != null)
+            {
+                return true;
+            }
+            return false;
         }
 
         public async Task Scale(string inputPath, string outputPath, string outputFormat)
@@ -34,7 +48,6 @@ namespace Real_ESRGAN_GUI
                 image = RemoveAlphaChannel(image);
             }
             //TODO: Add Alpha channel inference.
-
 
             logger.Log("Creating input image...");
             var inMat = ConvertImageToFloatTensorUnsafe(image);
