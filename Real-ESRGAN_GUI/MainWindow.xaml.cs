@@ -102,7 +102,7 @@ namespace Real_ESRGAN_GUI
                 
                 Logger.Progress = 30;
 
-                if (await model.LoadModel(modelPath, ModelSelectionComboBox.SelectedItem.ToString(), cancellationTokenSource.Token).WaitOrCancel(cancellationTokenSource.Token))
+                if (await model.LoadModel(modelPath, ModelSelectionComboBox.SelectedItem.ToString(), Convert.ToInt32(DeviceIdTextBox.Text), cancellationTokenSource.Token).WaitOrCancel(cancellationTokenSource.Token))
                 {
                     CancelButton.IsEnabled = false;
                     await model.Scale(inputPath, outputPath, OutputFormatComboBox.SelectedItem.ToString());

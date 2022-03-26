@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Real_ESRGAN_GUI"
         mc:Ignorable="d"
-        Title="Real-ESRGAN_GUI" Height="450" Width="800" MinWidth="600" MinHeight="340">
+        Title="Real-ESRGAN_GUI" Height="450" Width="800" MinWidth="800" MinHeight="340">
     <Window.Resources>
         <local:ListToStringConverter x:Key="ListToStringConverter"/>
     </Window.Resources>
@@ -35,14 +35,17 @@
                 <GroupBox Header="Output Format" Margin="244,0,0,0" HorizontalAlignment="Left" Width="140" Grid.Row="1">
                     <ComboBox x:Name="OutputFormatComboBox" Height="25" Margin="0,0,-2,0" IsEditable="True"/>
                 </GroupBox>
-                <GroupBox Header="Model Selection" Margin="389,0,5,0" Grid.Row="1">
+                <GroupBox Header="Model Selection" Margin="535,0,5,0" Grid.Row="1">
                     <ComboBox x:Name="ModelSelectionComboBox" Height="25" Margin="0,0,-2,0"/>
+                </GroupBox>
+                <GroupBox Header="Device Id" Margin="390,0,0,0" HorizontalAlignment="Left" Width="140" Grid.Row="1">
+                    <TextBox x:Name="DeviceIdTextBox" TextWrapping="Wrap" Margin="0,0,-2,0" Text="-1" Height="25"/>
                 </GroupBox>
             </Grid>
         </GroupBox>
         <ProgressBar local:ProgressBarSmoother.SmoothValue="{Binding Logger.Progress}" x:Name="ProgressBar" Height="25" Margin="10,192,10,0" VerticalAlignment="Top" Grid.ColumnSpan="2"/>
         <Border BorderThickness="1" BorderBrush="Black" Margin="10,222,10,10" Grid.ColumnSpan="2">
-            <TextBlock x:Name="LogTextBlock" Margin="0,0,0,-1" TextWrapping="Wrap">
+            <TextBlock x:Name="LogTextBlock" Margin="0,0,0,-1" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto">
                 <TextBlock.Text>
                     <MultiBinding Converter="{StaticResource ListToStringConverter}">
                         <Binding Path="Logger.Buffer" Mode="OneWay"/>

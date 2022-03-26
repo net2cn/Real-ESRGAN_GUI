@@ -32,7 +32,7 @@ def display_image(img, color_mode):
     cv2.waitKey()
 
 project_path=os.path.abspath("../Real-ESRGAN_GUI/")
-sess = rt.InferenceSession(os.path.join(project_path, "models/realesrgan-x4plus_anime_6B.onnx"))
+sess = rt.InferenceSession(os.path.join(project_path, "models/realesrgan-x4plus_anime_6B.onnx"), providers=["DmlExecutionProvider"], provider_options={"deviceId": "1"})
 print("loaded model.")
 
 in_image = cv2.imread(os.path.join("../assets", "avatar_256px.png"), cv2.IMREAD_UNCHANGED)

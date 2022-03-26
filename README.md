@@ -7,7 +7,10 @@ PRs are welcomed.
 
 ## Usage
 You know how a GUI works.
-![UI](./assets/screenshot_2021-09-07_194309.png)
+
+To use GPU acceleration, Windows 10 1709 or higher is required. Set the device id to the one you want (on single GPU PC, 0 is the default GPU) to use to enable GPU acceleration.
+
+![UI](./assets/screenshot_2022-03-26_171403.png)
 
 ## Result
 From ![256px image](./assets/avatar_256px.png) to ![1024px image](./assets/avatar_256px_realesrgan-x4plus_anime_6B.png) with the magic of [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN).
@@ -16,7 +19,7 @@ From ![256px image](./assets/avatar_256px.png) to ![1024px image](./assets/avata
 - Visual Studio 2019 or higher.
 
 ## Known Issue
-- GPU support is not working.
+- GPU support is not working on some environment.
 - Directory input is not implemented yet.
 - Alpha channel will be ignored.
 - Huge memory consumption when handling large image (~1000x1000, eats up ~18.5G memory easily).

@@ -17,18 +17,29 @@ namespace Real_ESRGAN_GUI
         private InferenceSession session;
         private Logger logger = Logger.Instance;
 
-        public async Task<bool> LoadModel(string modelPath, string modelName, CancellationToken token)
+        public async Task<bool> LoadModel(string modelPath, string modelName, int deviceId, CancellationToken token)
         {
             if (session == null || this.modelName != modelName)
             {
                 this.modelName = modelName;
                 try
                 {
-                    session = await Task.Run(() => { return new InferenceSession(Path.Combine(modelPath, $"{modelName}.onnx"), SessionOptions.MakeSessionOptionWithCudaProvider()); }).WaitOrCancel(token);
+                    var sessionOptions = new SessionOptions();
+                    if (deviceId == -1)
+                    {
+                        logger.Log("Creating inference session on CPU.");
+                        sessionOptions.AppendExecutionProvider_CPU();
+                    }
+                    else
+                    {
+                        logger.Log($"Creating inference session on GPU{deviceId}.");
+                        sessionOptions.AppendExecutionProvider_DML(deviceId);
+                    }
+                    session = await Task.Run(() => { return new InferenceSession(Path.Combine(modelPath, $"{modelName}.onnx"), sessionOptions); }).WaitOrCancel(token);
                 }
                 catch
                 {
-                    logger.Log("Unable to initial inference session on CUDA device! Using CPU instead.");
+                    logger.Log($"Unable to initial inference session on GPU{deviceId}! Falling back to CPU.");
                     session = await Task.Run(() => { return new InferenceSession(Path.Combine(modelPath, $"{modelName}.onnx")); }).WaitOrCancel(token);
                 }
             }
