@@ -40,6 +40,31 @@
     <None Update="models\realesrgan-x4plus_anime_6B.onnx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="models\realesrganv2-animevideo-xsx2.onnx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="models\realesrganv2-animevideo-xsx4.onnx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="models\realesrgan_x2plus.onnx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="C:\Users\mcope\.nuget\packages\microsoft.ai.directml\1.8.0\build\..\bin\x64-win\DirectML.Debug.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="C:\Users\mcope\.nuget\packages\microsoft.ai.directml\1.8.0\build\..\bin\x64-win\DirectML.Debug.pdb" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="C:\Users\mcope\.nuget\packages\microsoft.ai.directml\1.8.0\build\..\bin\x64-win\DirectML.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="C:\Users\mcope\.nuget\packages\microsoft.ai.directml\1.8.0\build\..\bin\x64-win\DirectML.pdb" />
   </ItemGroup>
 
 </Project>

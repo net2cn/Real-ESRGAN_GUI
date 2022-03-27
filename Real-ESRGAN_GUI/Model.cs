@@ -54,9 +54,9 @@ namespace Real_ESRGAN_GUI
         public async Task Scale(string inputPath, string outputPath, string outputFormat)
         {
             Bitmap image = new Bitmap(inputPath);
-            if (IsAlphaBitmap(image))
+            if (image.PixelFormat != PixelFormat.Format24bppRgb)
             {
-                image = RemoveAlphaChannel(image);
+                image = ConvertBitmapToFormat24bppRgb(image);
             }
             //TODO: Add Alpha channel inference.
 
@@ -67,6 +67,14 @@ namespace Real_ESRGAN_GUI
             logger.Log("Inferencing...");
             var outMat = await Inference(inMat);
             logger.Progress += 10;
+
+            if (outMat == null)
+            {
+                logger.Log("A null image is returned. Aborting...");
+                logger.Progress += 10;
+                image.Dispose();
+                return;
+            }
 
             logger.Log("Converting output tensor to image...");
             image = ConvertFloatTensorToImageUnsafe(outMat);
@@ -81,10 +89,18 @@ namespace Real_ESRGAN_GUI
 
         public async Task<Tensor<float>> Inference(Tensor<float> input)
         {
-            var inputName = session.InputMetadata.First().Key;
-            var inputTensor = new List<NamedOnnxValue>() { NamedOnnxValue.CreateFromTensor<float>(inputName, input) };
-            var output = await Task.Run(()=> { return session.Run(inputTensor).First().Value; });
-            return (Tensor<float>)output;
+            try
+            {
+                var inputName = session.InputMetadata.First().Key;
+                var inputTensor = new List<NamedOnnxValue>() { NamedOnnxValue.CreateFromTensor<float>(inputName, input) };
+                var output = await Task.Run(() => { return session.Run(inputTensor).First().Value; });
+                return (Tensor<float>)output;
+            }
+            catch
+            {
+                logger.Log("An exception has occurred during inference session.");
+            }
+            return null;
         }
 
         public static Tensor<float> ConvertImageToFloatTensorUnsafe(Bitmap image)
@@ -141,35 +157,14 @@ namespace Real_ESRGAN_GUI
             return bmp;
         }
 
-        public static bool IsAlphaBitmap(Bitmap bitmap)
-        {
-            BitmapData bmd = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), System.Drawing.Imaging.ImageLockMode.ReadOnly, bitmap.PixelFormat);
-            unsafe
-            {
-                byte* ptrAlpha = ((byte*)bmd.Scan0.ToPointer()) + 3;
-                for (int i = bmd.Width * bmd.Height; i > 0; --i)  // prefix-- should be faster
-                {
-                    if (*ptrAlpha < 255)
-                    {
-                        bitmap.UnlockBits(bmd);
-                        return false;
-                    }
-                    ptrAlpha += 4;
-                }
-            }
-            bitmap.UnlockBits(bmd);
-            return true;
-        }
-
-        public static Bitmap RemoveAlphaChannel(Bitmap bitmap)
+        public static Bitmap ConvertBitmapToFormat24bppRgb(Bitmap bitmap)
         {
             Bitmap target = new Bitmap(bitmap.Width, bitmap.Height, PixelFormat.Format24bppRgb);
             target.SetResolution(bitmap.HorizontalResolution, bitmap.VerticalResolution);   // Set both bitmap to same dpi to prevent scaling.
             using (Graphics g = Graphics.FromImage(target))
             {
                 g.Clear(Color.White);
-                g.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceOver;
-                g.DrawImage(bitmap, 0, 0);
+                g.DrawImage(bitmap, new Rectangle(0, 0, bitmap.Width, bitmap.Height));
             }
             return target;
         }
