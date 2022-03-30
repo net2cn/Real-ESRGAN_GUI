@@ -6,7 +6,9 @@
 欢迎提出Pull Requests。
 
 ## 使用方法
-我觉得你应该知道GUI应该怎么用。
+首先安装.NET Desktop Runtime 5.0.15。（x64）
+
+然后我觉得你应该知道GUI应该怎么用。;-)
 
 要使用GPU加速，你需要一块兼容DirectML的GPU与Windows 10 1709或更高的版本，以及兼容的GPU。请将Device Id设置为你想要使用的GPU序号以启用GPU加速（在一台只有一块GPU的PC上，0是默认GPU。但是在配备了集成GPU的PC上，0是集成GPU，1才是独立GPU）。你可以查看[这里](https://github.com/microsoft/DirectML#hardware-requirements)来获取一个更详细的GPU硬件需求。
 

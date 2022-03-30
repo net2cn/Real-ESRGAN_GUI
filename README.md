@@ -6,7 +6,9 @@ A C# GUI super-resolution inference utility of [Real-ESRGAN](https://github.com/
 PRs are welcomed.
 
 ## Usage
-I guess you probably know how a GUI works.
+Install .NET Desktop Runtime 5.0.15 or higher. (x64)
+
+And then I guess you probably know how a GUI works. ;-)
 
 To use GPU acceleration, a DirectML compatible GPU and an installation of Windows 10 1709 or higher is required. Set the device id to the GPU that you want to use to enable GPU acceleration (on single GPU PC, 0 is the default GPU. However, on some PC with an integrated GPU, 0 is the integrated GPU and 1 is the dedicated GPU). Check out [here](https://github.com/microsoft/DirectML#hardware-requirements) for a more specific hardware requirements.
 
