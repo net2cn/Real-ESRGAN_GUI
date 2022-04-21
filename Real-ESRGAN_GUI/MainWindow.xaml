@@ -26,7 +26,7 @@
                 <Label Content="Input" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Height="25" Width="40"/>
                 <Label Content="Output" HorizontalAlignment="Left" Margin="10,40,0,0" VerticalAlignment="Top" Height="25" Width="51"/>
                 <TextBox x:Name="OutputPathTextBox" Margin="80,40,70,0" TextWrapping="NoWrap" VerticalAlignment="Top" Height="25"/>
-                <TextBox x:Name="InputPathTextBox" Margin="80,10,69,0" TextWrapping="NoWrap" VerticalAlignment="Top" Height="25"/>
+                <TextBox x:Name="InputPathTextBox" Margin="80,10,69,0" TextWrapping="NoWrap" VerticalAlignment="Top" Height="25" TextChanged="InputPathTextBox_TextChanged"/>
                 <Button x:Name="OutputPathBrowseButton" Content="Browse..." Margin="0,40,10,0" VerticalAlignment="Top" Height="25" HorizontalAlignment="Right" Width="55" Click="OutputPathBrowseButton_Click"/>
                 <Button x:Name="InputPathBrowseButton" Content="Browse..." Margin="0,10,10,0" Height="25" VerticalAlignment="Top" HorizontalAlignment="Right" Width="54" Click="InputPathBrowseButton_Click"/>
                 <GroupBox Header="Input Format" HorizontalAlignment="Left" Width="239" Grid.Row="1">

@@ -10,6 +10,7 @@ using System.Windows.Data;
 using System.Windows.Media.Animation;
 using Ookii.Dialogs.Wpf;
 using Microsoft.ML.OnnxRuntime;
+using System.Collections.Generic;
 
 namespace Real_ESRGAN_GUI
 {
@@ -57,7 +58,7 @@ namespace Real_ESRGAN_GUI
             // Todo: Walk through directory recursively to find matching files if input path is a directory.
             if(!File.Exists(inputPath) && !Directory.Exists(inputPath))
             {
-                MessageBox.Show("Input path not exists!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Input path does not exists!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -67,13 +68,13 @@ namespace Real_ESRGAN_GUI
             }
             catch
             {
-                MessageBox.Show("Output path not valid!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Output path is not valid!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             if (!File.Exists(selectedModelPath))
             {
-                MessageBox.Show("Selected model not exists!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Selected model does not exists!", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             Regex validator = new Regex(@"^[A-Za-z0-9:]+$");
@@ -83,12 +84,31 @@ namespace Real_ESRGAN_GUI
                 return;
             }
 
-            // Create output path. No need to check if path exists.
-            Directory.CreateDirectory(outputPath);
+            // Check whether input path is a directory.
+            List<string> files = new List<string>();
+            if (Directory.Exists(inputPath))
+            {
+                // inputPath is a directory.
+                var filters = @"\." + String.Join(@"$|\.", InputFormatTextBox.Text.Split(":")) + "$";
+                foreach (string file in Directory.EnumerateFiles(inputPath, "*.*", SearchOption.AllDirectories))
+                {
+                    if (Regex.IsMatch(file, filters))
+                    {
+                        files.Add(file);
+                    }
+                }
+            }
+            else
+            {
+                // inputPath is a file.
+                files.Add(inputPath);
+            }
             Logger.Progress = 10;
 
             // Update UI element and prepare cancellation token source.
             StartButton.IsEnabled = false;
+            ModelSelectionComboBox.IsEnabled = false;
+
             if (cancellationTokenSource != null)
             {
                 cancellationTokenSource.Dispose();
@@ -105,7 +125,7 @@ namespace Real_ESRGAN_GUI
                 if (await model.LoadModel(modelPath, ModelSelectionComboBox.SelectedItem.ToString(), Convert.ToInt32(DeviceIdTextBox.Text), cancellationTokenSource.Token).WaitOrCancel(cancellationTokenSource.Token))
                 {
                     CancelButton.IsEnabled = false;
-                    await model.Scale(inputPath, outputPath, OutputFormatComboBox.SelectedItem.ToString());
+                    await model.Scale(inputPath, files, outputPath, OutputFormatComboBox.SelectedItem.ToString());
                     Logger.Progress = 100;
                     Logger.Log("Done!");
                 }
@@ -126,6 +146,7 @@ namespace Real_ESRGAN_GUI
             {
                 model.Dispose();
                 GC.Collect();
+                ModelSelectionComboBox.IsEnabled = true;
                 StartButton.IsEnabled = true;
                 CancelButton.IsEnabled = true;
             }
@@ -146,13 +167,17 @@ namespace Real_ESRGAN_GUI
         private void InputPathBrowseButton_Click(object sender, RoutedEventArgs e)
         {
             VistaOpenFileDialog dialog = new VistaOpenFileDialog();
+            
             // Construct filter string for open file dialog.
             var filter = "";
+            var count = 1;
             foreach(var ext in InputFormatTextBox.Text.Split(":"))
             {
                 filter += $"{ext} (*.{ext})|*.{ext}|";
+                count++;
             }
             dialog.Filter = filter+"All files (*.*)|*.*";
+            dialog.FilterIndex = count;
 
             if ((bool)dialog.ShowDialog(this))
             {
@@ -169,6 +194,18 @@ namespace Real_ESRGAN_GUI
             if ((bool)dialog.ShowDialog(this))
             {
                 OutputPathTextBox.Text = Path.Combine(dialog.SelectedPath, " ").TrimEnd();
+            }
+        }
+
+        private void InputPathTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (File.Exists(InputPathTextBox.Text))
+            {
+                OutputPathTextBox.Text = Path.GetDirectoryName(InputPathTextBox.Text)+"\\";
+            }
+            else if (Directory.Exists(InputPathTextBox.Text))
+            {
+                OutputPathTextBox.Text = InputPathTextBox.Text.TrimEnd('\\') + "_Upscaled\\";
             }
         }
     }

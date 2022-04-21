@@ -51,40 +51,46 @@ namespace Real_ESRGAN_GUI
             return false;
         }
 
-        public async Task Scale(string inputPath, string outputPath, string outputFormat)
+        public async Task Scale(string baseInputPath, List<string> inputPaths, string outputPath, string outputFormat)
         {
-            Bitmap image = new Bitmap(inputPath);
-            if (image.PixelFormat != PixelFormat.Format24bppRgb)
+            int count = inputPaths.Count();
+            foreach(var inputPath in inputPaths)
             {
-                image = ConvertBitmapToFormat24bppRgb(image);
-            }
-            //TODO: Add Alpha channel inference.
+                Bitmap image = new Bitmap(inputPath);
+                if (image.PixelFormat != PixelFormat.Format24bppRgb)
+                {
+                    image = ConvertBitmapToFormat24bppRgb(image);
+                }
+                //TODO: Add Alpha channel inference.
 
-            logger.Log("Creating input image...");
-            var inMat = ConvertImageToFloatTensorUnsafe(image);
-            logger.Progress += 10;
+                logger.Log("Creating input image...");
+                var inMat = ConvertImageToFloatTensorUnsafe(image);
+                logger.Progress += 10/count;
 
-            logger.Log("Inferencing...");
-            var outMat = await Inference(inMat);
-            logger.Progress += 10;
+                logger.Log("Inferencing...");
+                var outMat = await Inference(inMat);
+                logger.Progress += 10/count;
 
-            if (outMat == null)
-            {
-                logger.Log("A null image is returned. Aborting...");
-                logger.Progress += 10;
+                if (outMat == null)
+                {
+                    logger.Log("A null image is returned.");
+                    logger.Progress += 10/count;
+                    image.Dispose();
+                }
+
+                logger.Log("Converting output tensor to image...");
+                image = ConvertFloatTensorToImageUnsafe(outMat);
+
+                var saveName = $"\\{Path.GetFileName(inputPath).Split(".")[0]}_{modelName}.{outputFormat}";
+                var saveStructure = Path.GetRelativePath(baseInputPath, Path.GetDirectoryName(inputPath));
+                var savePath = Path.GetFullPath(saveStructure,outputPath)+"\\";
+                
+                logger.Log($"Writing image to {savePath}...");
+                Directory.CreateDirectory(savePath);
+                image.Save(savePath+saveName);
+                logger.Progress += 10/count;
                 image.Dispose();
-                return;
             }
-
-            logger.Log("Converting output tensor to image...");
-            image = ConvertFloatTensorToImageUnsafe(outMat);
-            
-            var saveName = Path.GetFileName(inputPath);
-            var savePath = $"{outputPath}{saveName.Split(".")[0]}_{modelName}.{outputFormat}";
-            logger.Log($"Writing image to {savePath}...");
-            image.Save(savePath);
-            logger.Progress += 10;
-            image.Dispose();
         }
 
         public async Task<Tensor<float>> Inference(Tensor<float> input)
