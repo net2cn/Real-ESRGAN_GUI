@@ -102,6 +102,7 @@ namespace Real_ESRGAN_GUI
             {
                 // inputPath is a file.
                 files.Add(inputPath);
+                inputPath = Path.GetDirectoryName(inputPath);
             }
             Logger.Progress = 10;
 
