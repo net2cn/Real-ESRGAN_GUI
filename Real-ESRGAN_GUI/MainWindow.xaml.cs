@@ -126,7 +126,7 @@ namespace Real_ESRGAN_GUI
                 if (await model.LoadModel(modelPath, ModelSelectionComboBox.SelectedItem.ToString(), Convert.ToInt32(DeviceIdTextBox.Text), cancellationTokenSource.Token).WaitOrCancel(cancellationTokenSource.Token))
                 {
                     CancelButton.IsEnabled = false;
-                    await model.Scale(inputPath, files, outputPath, OutputFormatComboBox.SelectedItem.ToString());
+                    await model.Scale(inputPath, files, outputPath, OutputFormatComboBox.SelectedItem.ToString(), OutputFormatComboBox.SelectedItem.ToString()=="png");
                     Logger.Progress = 100;
                     Logger.Log("Done!");
                 }

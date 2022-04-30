@@ -51,17 +51,24 @@ namespace Real_ESRGAN_GUI
             return false;
         }
 
-        public async Task Scale(string baseInputPath, List<string> inputPaths, string outputPath, string outputFormat)
+        public async Task Scale(string baseInputPath, List<string> inputPaths, string outputPath, string outputFormat, bool preserveAlpha)
         {
             int count = inputPaths.Count();
             foreach(var inputPath in inputPaths)
             {
                 Bitmap image = new Bitmap(inputPath);
-                if (image.PixelFormat != PixelFormat.Format24bppRgb)
+                var originalPixelFormat = image.PixelFormat;
+                if (image.PixelFormat != PixelFormat.Format32bppArgb)
                 {
-                    image = ConvertBitmapToFormat24bppRgb(image);
+                    Bitmap alphaImage;
+                    image = ImageProcess.ConvertBitmapToFormat32bppArgb(image);
                 }
                 //TODO: Add Alpha channel inference.
+                Bitmap alpha=null;
+                if (preserveAlpha && originalPixelFormat!=PixelFormat.Format24bppRgb)
+                {
+                    ImageProcess.SplitChannel(image, out image, out alpha);
+                }
 
                 logger.Log("Creating input image...");
                 var inMat = ConvertImageToFloatTensorUnsafe(image);
@@ -80,6 +87,12 @@ namespace Real_ESRGAN_GUI
 
                 logger.Log("Converting output tensor to image...");
                 image = ConvertFloatTensorToImageUnsafe(outMat);
+
+                if (preserveAlpha && originalPixelFormat != PixelFormat.Format24bppRgb && alpha!=null)
+                {
+                    alpha = ImageProcess.ResizeBitmap(alpha, image.Width, image.Height);    // Using BICUBIC to resize alpha channel.
+                    image = ImageProcess.CombineChannel(image, alpha);
+                }
 
                 var saveName = $"\\{Path.GetFileName(inputPath).Split(".")[0]}_{modelName}.{outputFormat}";
                 var saveStructure = Path.GetRelativePath(baseInputPath, Path.GetDirectoryName(inputPath));
@@ -161,18 +174,6 @@ namespace Real_ESRGAN_GUI
                 bmp.UnlockBits(bmd);
             }
             return bmp;
-        }
-
-        public static Bitmap ConvertBitmapToFormat24bppRgb(Bitmap bitmap)
-        {
-            Bitmap target = new Bitmap(bitmap.Width, bitmap.Height, PixelFormat.Format24bppRgb);
-            target.SetResolution(bitmap.HorizontalResolution, bitmap.VerticalResolution);   // Set both bitmap to same dpi to prevent scaling.
-            using (Graphics g = Graphics.FromImage(target))
-            {
-                g.Clear(Color.White);
-                g.DrawImage(bitmap, new Rectangle(0, 0, bitmap.Width, bitmap.Height));
-            }
-            return target;
         }
 
         public void Dispose()
