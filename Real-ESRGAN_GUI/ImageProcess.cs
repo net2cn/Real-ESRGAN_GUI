@@ -12,7 +12,7 @@ namespace Real_ESRGAN_GUI
         public static Bitmap ResizeBitmap(Bitmap image, int width, int height)
         {
             var destRect = new Rectangle(0, 0, width, height);
-            var destImage = new Bitmap(width, height);
+            var destImage = new Bitmap(width, height, image.PixelFormat);
 
             destImage.SetResolution(image.HorizontalResolution, image.VerticalResolution);
 
@@ -94,7 +94,7 @@ namespace Real_ESRGAN_GUI
         /// <param name="rgb">Format24bppRgb bitmap containing the RGB channels.</param>
         /// <param name="alpha">Format24bppRgb bitmap containng the alpha channels in the B channel.</param>
         /// <returns></returns>
-        public static Bitmap CombineChannel(Bitmap rgb, Bitmap alpha)
+        public static Bitmap CombineChannel(Bitmap rgb, Bitmap alpha, bool premutiply=true)
         {
             if (rgb.PixelFormat!=PixelFormat.Format24bppRgb || alpha.PixelFormat != PixelFormat.Format24bppRgb)
             {
@@ -111,17 +111,32 @@ namespace Real_ESRGAN_GUI
                 byte* alphaPtr = (byte*)alphaData.Scan0;
                 int y, x;
 
-                for (y = 0; y < output.Height; y++)
+                if (premutiply)
                 {
-                    for (x = 0; x < output.Width; x++)
+                    for (y = 0; y < output.Height; y++)
                     {
-                        outputPtr[y * outputData.Stride + x * 4 + 0] = rgbPtr[y * rgbData.Stride + x * 3 + 0];
-                        outputPtr[y * outputData.Stride + x * 4 + 1] = rgbPtr[y * rgbData.Stride + x * 3 + 1];
-                        outputPtr[y * outputData.Stride + x * 4 + 2] = rgbPtr[y * rgbData.Stride + x * 3 + 2];
-                        outputPtr[y * outputData.Stride + x * 4 + 3] = alphaPtr[y * alphaData.Stride + x * 4 + 0];
+                        for (x = 0; x < output.Width; x++)
+                        {
+                            outputPtr[y * outputData.Stride + x * 4 + 0] = Convert.ToByte(rgbPtr[y * rgbData.Stride + x * 3 + 0] * alphaPtr[y * alphaData.Stride + x * 3 + 0] / 255f);
+                            outputPtr[y * outputData.Stride + x * 4 + 1] = Convert.ToByte(rgbPtr[y * rgbData.Stride + x * 3 + 1] * alphaPtr[y * alphaData.Stride + x * 3 + 0] / 255f);
+                            outputPtr[y * outputData.Stride + x * 4 + 2] = Convert.ToByte(rgbPtr[y * rgbData.Stride + x * 3 + 2] * alphaPtr[y * alphaData.Stride + x * 3 + 0] / 255f);
+                            outputPtr[y * outputData.Stride + x * 4 + 3] = alphaPtr[y * alphaData.Stride + x * 3 + 0];
+                        }
                     }
                 }
-
+                else
+                {
+                    for (y = 0; y < output.Height; y++)
+                    {
+                        for (x = 0; x < output.Width; x++)
+                        {
+                            outputPtr[y * outputData.Stride + x * 4 + 0] = rgbPtr[y * rgbData.Stride + x * 3 + 0];
+                            outputPtr[y * outputData.Stride + x * 4 + 1] = rgbPtr[y * rgbData.Stride + x * 3 + 1];
+                            outputPtr[y * outputData.Stride + x * 4 + 2] = rgbPtr[y * rgbData.Stride + x * 3 + 2];
+                            outputPtr[y * outputData.Stride + x * 4 + 3] = alphaPtr[y * alphaData.Stride + x * 3 + 0];
+                        }
+                    }
+                }
 
                 output.UnlockBits(outputData);
                 rgb.UnlockBits(rgbData);
