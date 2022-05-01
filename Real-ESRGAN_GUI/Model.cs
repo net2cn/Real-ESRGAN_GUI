@@ -58,16 +58,21 @@ namespace Real_ESRGAN_GUI
             {
                 Bitmap image = new Bitmap(inputPath);
                 var originalPixelFormat = image.PixelFormat;
-                if (image.PixelFormat != PixelFormat.Format32bppArgb)
-                {
-                    Bitmap alphaImage;
-                    image = ImageProcess.ConvertBitmapToFormat32bppArgb(image);
-                }
-                //TODO: Add Alpha channel inference.
+
                 Bitmap alpha=null;
                 if (preserveAlpha && originalPixelFormat!=PixelFormat.Format24bppRgb)
                 {
+                    if (image.PixelFormat != PixelFormat.Format32bppArgb)
+                    {
+                        image = ImageProcess.ConvertBitmapToFormat(image, PixelFormat.Format32bppArgb);
+                    }
                     ImageProcess.SplitChannel(image, out image, out alpha);
+                }
+
+                // Ensure that we got RGB channels in Format24bppRgb bitmap.
+                if (image.PixelFormat != PixelFormat.Format24bppRgb)
+                {
+                    image = ImageProcess.ConvertBitmapToFormat(image, PixelFormat.Format24bppRgb);
                 }
 
                 logger.Log("Creating input image...");

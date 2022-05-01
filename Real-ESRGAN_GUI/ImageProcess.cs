@@ -34,9 +34,9 @@ namespace Real_ESRGAN_GUI
             return destImage;
         }
 
-        public static Bitmap ConvertBitmapToFormat32bppArgb(Bitmap bitmap)
+        public static Bitmap ConvertBitmapToFormat(Bitmap bitmap, PixelFormat format)
         {
-            Bitmap target = new Bitmap(bitmap.Width, bitmap.Height, PixelFormat.Format32bppArgb);
+            Bitmap target = new Bitmap(bitmap.Width, bitmap.Height, format);
             target.SetResolution(bitmap.HorizontalResolution, bitmap.VerticalResolution);   // Set both bitmap to same dpi to prevent scaling.
             using (Graphics g = Graphics.FromImage(target))
             {
@@ -46,8 +46,18 @@ namespace Real_ESRGAN_GUI
             return target;
         }
 
+        /// <summary>
+        /// Split Format32bppArgb bitmap into two Format24bppRgb bitmap, one contains the RGB channels and one contains the alpha channel in the B channel.
+        /// </summary>
+        /// <param name="input">Format32bppArgb bitmap</param>
+        /// <param name="rgb">Format24bppRgb bitmap containing RGB channels.</param>
+        /// <param name="alpha">Format24bppRgb bitmap containint alpha channel of the original image in the B channel.</param>
         public static void SplitChannel(Bitmap input, out Bitmap rgb, out Bitmap alpha)
         {
+            if (input.PixelFormat != PixelFormat.Format32bppArgb)
+            {
+                throw new FormatException();
+            }
             rgb = new Bitmap(input.Width, input.Height, PixelFormat.Format24bppRgb);
             alpha = new Bitmap(input.Width, input.Height, PixelFormat.Format24bppRgb);
             var inputData = input.LockBits(new Rectangle(0, 0, input.Width, input.Height), ImageLockMode.ReadOnly, input.PixelFormat);
@@ -78,8 +88,18 @@ namespace Real_ESRGAN_GUI
             }
         }
 
+        /// <summary>
+        /// Combine RGB image and alpha image as one ARGB image.
+        /// </summary>
+        /// <param name="rgb">Format24bppRgb bitmap containing the RGB channels.</param>
+        /// <param name="alpha">Format24bppRgb bitmap containng the alpha channels in the B channel.</param>
+        /// <returns></returns>
         public static Bitmap CombineChannel(Bitmap rgb, Bitmap alpha)
         {
+            if (rgb.PixelFormat!=PixelFormat.Format24bppRgb || alpha.PixelFormat != PixelFormat.Format24bppRgb)
+            {
+                throw new FormatException();
+            }
             var output = new Bitmap(rgb.Width, rgb.Height, PixelFormat.Format32bppArgb);
             var outputData = output.LockBits(new Rectangle(0, 0, output.Width, output.Height), ImageLockMode.WriteOnly, output.PixelFormat);
             var rgbData = rgb.LockBits(new Rectangle(0, 0, rgb.Width, rgb.Height), ImageLockMode.ReadOnly, rgb.PixelFormat);
