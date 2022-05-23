@@ -4,34 +4,29 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Text;
+using Emgu.CV;
+using Emgu.CV.CvEnum;
+using Emgu.CV.Structure;
 
 namespace Real_ESRGAN_GUI
 {
     class ImageProcess
     {
-        public static Bitmap ResizeBitmap(Bitmap image, int width, int height)
+        public static Bitmap ResizeAlphaChannel(Bitmap image, int width, int height)
         {
-            var destRect = new Rectangle(0, 0, width, height);
-            var destImage = new Bitmap(width, height, image.PixelFormat);
-
-            destImage.SetResolution(image.HorizontalResolution, image.VerticalResolution);
-
-            using (var graphics = Graphics.FromImage(destImage))
-            {
-                graphics.CompositingMode = CompositingMode.SourceCopy;
-                graphics.CompositingQuality = CompositingQuality.HighQuality;
-                graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                graphics.SmoothingMode = SmoothingMode.HighQuality;
-                graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
-
-                using (var wrapMode = new ImageAttributes())
-                {
-                    wrapMode.SetWrapMode(WrapMode.TileFlipXY);
-                    graphics.DrawImage(image, destRect, 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, wrapMode);
-                }
-            }
-
-            return destImage;
+            var origin = image.ToImage<Rgb, Byte>().Resize(width, height, Inter.Cubic);
+            // Edge Detection
+            var gray = origin.Split()[2];
+            var edge = gray.Canny(150, 150, 3, true);
+            edge = edge.SmoothGaussian(3);
+            CvInvoke.Threshold(edge, edge, 60, 255, ThresholdType.Binary);
+            // TODO: FXAA
+            gray = edge.Convert<Gray, Byte>();
+            var blurred = origin.CopyBlank();
+            CvInvoke.MixChannels(gray, blurred, new int[] { 0, 2 });
+            origin = origin.Sub(blurred);
+            origin = origin.SmoothGaussian(3);
+            return origin.ToBitmap<Rgb, Byte>();
         }
 
         public static Bitmap ConvertBitmapToFormat(Bitmap bitmap, PixelFormat format)

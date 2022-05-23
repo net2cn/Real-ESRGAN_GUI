@@ -95,7 +95,7 @@ namespace Real_ESRGAN_GUI
 
                 if (preserveAlpha && originalPixelFormat != PixelFormat.Format24bppRgb && alpha!=null)
                 {
-                    alpha = ImageProcess.ResizeBitmap(alpha, image.Width, image.Height);    // Using BICUBIC to resize alpha channel.
+                    alpha = ImageProcess.ResizeAlphaChannel(alpha, image.Width, image.Height);    // Using BICUBIC to resize alpha channel.
                     image = ImageProcess.CombineChannel(image, alpha);
                 }
 
