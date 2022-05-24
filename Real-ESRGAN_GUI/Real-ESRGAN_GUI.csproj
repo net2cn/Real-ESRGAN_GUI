@@ -5,7 +5,6 @@
 		<TargetFramework>net5.0-windows</TargetFramework>
 		<RootNamespace>Real_ESRGAN_GUI</RootNamespace>
 		<UseWPF>true</UseWPF>
-		<StartupObject></StartupObject>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -17,9 +16,17 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="Emgu.CV" Version="4.5.5.4823" />
+		<PackageReference Include="Emgu.CV.Bitmap" Version="4.5.5.4823" />
+		<PackageReference Include="Emgu.CV.runtime.windows" Version="4.5.5.4823" />
 		<PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.11.0" />
 		<PackageReference Include="Microsoft.ML.OnnxRuntime.Managed" Version="1.11.0" />
 		<PackageReference Include="Ookii.Dialogs.Wpf" Version="5.0.1" />
+		<PackageReference Include="System.Drawing.Common" Version="6.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\Anime4KSharp\Anime4KSharp.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

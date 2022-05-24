@@ -15,18 +15,36 @@ namespace Real_ESRGAN_GUI
         public static Bitmap ResizeAlphaChannel(Bitmap image, int width, int height)
         {
             var origin = image.ToImage<Rgb, Byte>().Resize(width, height, Inter.Cubic);
-            // Edge Detection
-            var gray = origin.Split()[2];
-            var edge = gray.Canny(150, 150, 3, true);
-            edge = edge.SmoothGaussian(3);
-            CvInvoke.Threshold(edge, edge, 60, 255, ThresholdType.Binary);
-            // TODO: FXAA
-            gray = edge.Convert<Gray, Byte>();
-            var blurred = origin.CopyBlank();
-            CvInvoke.MixChannels(gray, blurred, new int[] { 0, 2 });
-            origin = origin.Sub(blurred);
-            origin = origin.SmoothGaussian(3);
-            return origin.ToBitmap<Rgb, Byte>();
+
+            float scale = width / image.Width;
+            float pushStrength = scale / 4f;
+            float pushGradStrength = scale / 2f;
+            Bitmap img = origin.ToBitmap();
+            // Push multiple times to get sharper lines.
+            for (int i = 0; i < 3; i++)
+            {
+                // Compute Luminance and store it to alpha channel.
+                img = Anime4KSharp.ImageProcess.ComputeLuminance(img);
+                //img.Save("Luminance.png", ImageFormat.Png);
+
+                // Push (Notice that the alpha channel is pushed with rgb channels).
+                Bitmap img2 = Anime4KSharp.ImageProcess.PushColor(img, clamp((int)(pushStrength * 255), 0, 0xFF));
+                //img2.Save("Push.png", ImageFormat.Png);
+                img.Dispose();
+                img = img2;
+
+                // Compute Gradient of Luminance and store it to alpha channel.
+                img2 = Anime4KSharp.ImageProcess.ComputeGradient(img);
+                //img2.Save("Grad.png", ImageFormat.Png);
+                img.Dispose();
+                img = img2;
+
+                // Push Gradient
+                img2 = Anime4KSharp.ImageProcess.PushGradient(img, clamp((int)(pushGradStrength * 255), 0, 0xFF));
+                img.Dispose();
+                img = img2;
+            }
+            return img.ToImage<Rgb, Byte>().ToBitmap();
         }
 
         public static Bitmap ConvertBitmapToFormat(Bitmap bitmap, PixelFormat format)
@@ -55,32 +73,11 @@ namespace Real_ESRGAN_GUI
             }
             rgb = new Bitmap(input.Width, input.Height, PixelFormat.Format24bppRgb);
             alpha = new Bitmap(input.Width, input.Height, PixelFormat.Format24bppRgb);
-            var inputData = input.LockBits(new Rectangle(0, 0, input.Width, input.Height), ImageLockMode.ReadOnly, input.PixelFormat);
-            var rgbData = rgb.LockBits(new Rectangle(0, 0, rgb.Width, rgb.Height), ImageLockMode.WriteOnly, rgb.PixelFormat);
-            var alphaData = alpha.LockBits(new Rectangle(0, 0, alpha.Width, alpha.Height), ImageLockMode.WriteOnly, alpha.PixelFormat);
-            unsafe
-            {
-                byte* inputPtr = (byte*)inputData.Scan0;
-                byte* rgbPtr = (byte*)rgbData.Scan0;
-                byte* alphaPtr = (byte*)alphaData.Scan0;
-                int y, x;
-
-                for (y = 0; y < input.Height; y++)
-                {
-                    for (x = 0; x < input.Width; x++)
-                    {
-                        rgbPtr[y * rgbData.Stride + x * 3 + 0] = inputPtr[y * inputData.Stride + x * 4 + 0];
-                        rgbPtr[y * rgbData.Stride + x * 3 + 1] = inputPtr[y * inputData.Stride + x * 4 + 1];
-                        rgbPtr[y * rgbData.Stride + x * 3 + 2] = inputPtr[y * inputData.Stride + x * 4 + 2];
-                        alphaPtr[y * alphaData.Stride + x * 3 + 0] = inputPtr[y * inputData.Stride + x * 4 + 3];    // Save to B channel.
-                    }
-                }
-
-
-                input.UnlockBits(inputData);
-                rgb.UnlockBits(rgbData);
-                alpha.UnlockBits(alphaData);
-            }
+            var origin=input.ToImage<Rgba, Byte>();
+            rgb=origin.Convert<Rgb,Byte>().ToBitmap();
+            var alphaImg = origin.CopyBlank().Convert<Rgb, Byte>();
+            CvInvoke.MixChannels(origin, alphaImg, new int[] { 3, 2 });
+            alpha = alphaImg.ToBitmap<Rgb, Byte>();
         }
 
         /// <summary>
@@ -91,53 +88,29 @@ namespace Real_ESRGAN_GUI
         /// <returns></returns>
         public static Bitmap CombineChannel(Bitmap rgb, Bitmap alpha, bool premutiply=true)
         {
-            if (rgb.PixelFormat!=PixelFormat.Format24bppRgb || alpha.PixelFormat != PixelFormat.Format24bppRgb)
+            if (rgb.PixelFormat != PixelFormat.Format24bppRgb || alpha.PixelFormat != PixelFormat.Format24bppRgb)
             {
                 throw new FormatException();
             }
-            var output = new Bitmap(rgb.Width, rgb.Height, PixelFormat.Format32bppArgb);
-            var outputData = output.LockBits(new Rectangle(0, 0, output.Width, output.Height), ImageLockMode.WriteOnly, output.PixelFormat);
-            var rgbData = rgb.LockBits(new Rectangle(0, 0, rgb.Width, rgb.Height), ImageLockMode.ReadOnly, rgb.PixelFormat);
-            var alphaData = alpha.LockBits(new Rectangle(0, 0, alpha.Width, alpha.Height), ImageLockMode.ReadOnly, alpha.PixelFormat);
-            unsafe
+            var output = rgb.ToImage<Rgba, Byte>();
+            CvInvoke.MixChannels(alpha.ToImage<Rgb, Byte>(), output, new int[] { 2, 3 });
+            alpha.ToImage<Rgb, Byte>()[1].Save(@"C:\Users\mcope\source\repos\Real-ESRGAN_GUI\testFolder\alpha.png");
+            output[3].Save(@"C:\Users\mcope\source\repos\Real-ESRGAN_GUI\testFolder\alpha_.png");
+            return output.Convert<Bgra, Byte>().ToBitmap();
+        }
+
+        private static int clamp(int i, int min, int max)
+        {
+            if (i < min)
             {
-                byte* outputPtr = (byte*)outputData.Scan0;
-                byte* rgbPtr = (byte*)rgbData.Scan0;
-                byte* alphaPtr = (byte*)alphaData.Scan0;
-                int y, x;
-
-                if (premutiply)
-                {
-                    for (y = 0; y < output.Height; y++)
-                    {
-                        for (x = 0; x < output.Width; x++)
-                        {
-                            outputPtr[y * outputData.Stride + x * 4 + 0] = Convert.ToByte(rgbPtr[y * rgbData.Stride + x * 3 + 0] * alphaPtr[y * alphaData.Stride + x * 3 + 0] / 255f);
-                            outputPtr[y * outputData.Stride + x * 4 + 1] = Convert.ToByte(rgbPtr[y * rgbData.Stride + x * 3 + 1] * alphaPtr[y * alphaData.Stride + x * 3 + 0] / 255f);
-                            outputPtr[y * outputData.Stride + x * 4 + 2] = Convert.ToByte(rgbPtr[y * rgbData.Stride + x * 3 + 2] * alphaPtr[y * alphaData.Stride + x * 3 + 0] / 255f);
-                            outputPtr[y * outputData.Stride + x * 4 + 3] = alphaPtr[y * alphaData.Stride + x * 3 + 0];
-                        }
-                    }
-                }
-                else
-                {
-                    for (y = 0; y < output.Height; y++)
-                    {
-                        for (x = 0; x < output.Width; x++)
-                        {
-                            outputPtr[y * outputData.Stride + x * 4 + 0] = rgbPtr[y * rgbData.Stride + x * 3 + 0];
-                            outputPtr[y * outputData.Stride + x * 4 + 1] = rgbPtr[y * rgbData.Stride + x * 3 + 1];
-                            outputPtr[y * outputData.Stride + x * 4 + 2] = rgbPtr[y * rgbData.Stride + x * 3 + 2];
-                            outputPtr[y * outputData.Stride + x * 4 + 3] = alphaPtr[y * alphaData.Stride + x * 3 + 0];
-                        }
-                    }
-                }
-
-                output.UnlockBits(outputData);
-                rgb.UnlockBits(rgbData);
-                alpha.UnlockBits(alphaData);
+                i = min;
             }
-            return output;
+            else if (i > max)
+            {
+                i = max;
+            }
+
+            return i;
         }
     }
 }
