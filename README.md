@@ -22,6 +22,9 @@ From ![256px image](./assets/avatar_256px.png) to ![1024px image](./assets/avata
 ## Build Prerequisites
 - Visual Studio 2019 or higher.
 
+## Convert models
+Please see [Convert_Models_From_PyTorch.md](./Convert_Models_From_PyTorch.md)
+
 ## Known Issue
 - GPU accleration is not working on some environment (may yield a black image).
 - Directory input is not implemented yet.

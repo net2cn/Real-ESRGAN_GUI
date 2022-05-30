@@ -22,6 +22,9 @@
 ## 构建环境
 - Visual Studio 2019或更高。
 
+## Convert models
+请参阅[Convert_Models_From_PyTorch.md](./Convert_Models_From_PyTorch.md)（英语）
+
 ## 已知问题
 - 在有些环境下GPU加速不可用（可能会产生一张纯黑色的图片）。
 - 从文件夹输入图片还未实现。
