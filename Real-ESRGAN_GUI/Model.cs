@@ -34,12 +34,13 @@ namespace Real_ESRGAN_GUI
                     {
                         logger.Log($"Creating inference session on GPU{deviceId}.");
                         sessionOptions.AppendExecutionProvider_DML(deviceId);
+                        sessionOptions.EnableMemoryPattern = false;
                     }
                     session = await Task.Run(() => { return new InferenceSession(Path.Combine(modelPath, $"{modelName}.onnx"), sessionOptions); }).WaitOrCancel(token);
                 }
-                catch
+                catch (Exception ex)
                 {
-                    logger.Log($"Unable to initial inference session on GPU{deviceId}! Falling back to CPU.");
+                    logger.Log($"{ex}: Unable to initial inference session on GPU{deviceId}! Falling back to CPU.");
                     session = await Task.Run(() => { return new InferenceSession(Path.Combine(modelPath, $"{modelName}.onnx")); }).WaitOrCancel(token);
                 }
             }
@@ -85,9 +86,10 @@ namespace Real_ESRGAN_GUI
 
                 if (outMat == null)
                 {
-                    logger.Log("A null image is returned.");
+                    logger.Log("A null image is returned! Aborting...");
                     logger.Progress += 10/count;
                     image.Dispose();
+                    return;
                 }
 
                 logger.Log("Converting output tensor to image...");
@@ -120,9 +122,11 @@ namespace Real_ESRGAN_GUI
                 var output = await Task.Run(() => { return session.Run(inputTensor).First().Value; });
                 return (Tensor<float>)output;
             }
-            catch
+            catch (Exception ex)
             {
-                logger.Log("An exception has occurred during inference session.");
+                logger.Log("An exception has occurred during inference session!");
+                logger.Log(ex.ToString());
+                logger.Log(ex.Message);
             }
             return null;
         }
